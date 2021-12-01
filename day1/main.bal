@@ -17,24 +17,20 @@ function partA(int[] input) returns int {
 }
 
 function partB(int[] input) returns int {
-    int[] sums = [];
-    foreach int i in 2..<input.length() {
-        sums.push(input[i] + input[i - 1] + input[i - 2]);
-    }
+    int[] sums = 
+        from int i in 2..<input.length()
+        select input[i] + input[i - 1] + input[i - 2];
     return countIncreases(sums);
 }
 
-public function main() {
-    string[]|io:Error lines = io:fileReadLines("input.txt");
-    if lines is error {
-        io:println("Could not read input.txt; are you sure it's there?");
-        return;
-    }
+public function main() returns error? {
+    string[]lines = check io:fileReadLines("input.txt");
 
-    int[] input = from var line in lines
-                    let int|error parsed = int:fromString(line)
-                    where !(parsed is error)
-                    select parsed;
+    int[] input = 
+        from var line in lines
+        let int|error parsed = check int:fromString(line)
+        where !(parsed is error)
+        select parsed;
 
     io:println("Part A: ", partA(input));
     io:println("Part B: ", partB(input));
