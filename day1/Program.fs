@@ -3,29 +3,21 @@
 //  is larger than its predecessor, since both parts of this
 //  problem require that.
 let count_increases (input : int array) =
-    let iterator (total, prev) current =
-        match prev with
-        | Some a when a < current -> (total + 1, Some current)
-        | _ -> (total, Some current)
-    in
-    Array.fold iterator (0, None) input
-    |> fst
+    input
+    |> Array.pairwise
+    |> Array.filter (fun (prev, current) -> current > prev)
+    |> Array.length
 
 // Part 1: how often is the current number larger than its predecessor?
 let part_a = count_increases 
 
-// Part 2: how often is the current three-numbr-window-sum larger than 
+// Part 2: how often is the current three-number-window-sum larger than 
 //  the previous three-number-window-sum?
 let part_b (input: int array) =
     let sliding_sum_list =
         input 
-        |> Array.mapi (fun idx current ->
-            if idx < 2 then None
-            else
-                Some (current + input.[idx - 1] + input.[idx - 2])
-        ) 
-        |> Array.filter (Option.isSome)
-        |> Array.map (Option.get)
+        |> Array.windowed 3
+        |> Array.map Array.sum
     in
     count_increases sliding_sum_list
     
