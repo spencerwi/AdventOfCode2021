@@ -1,8 +1,10 @@
 import ballerina/io;
 import ballerina/regex;
 
+type Command "forward"|"up"|"down";
+
 type Instruction record {
-    "forward"|"up"|"down" command;
+    Command command;
     int amount;
 };
 
@@ -23,60 +25,53 @@ function parseInstruction(string line) returns Instruction {
 
     // Ballerina doesn't yet have great regex support libs, so we're stuck with doing string-splitting here
     string[] components = regex:split(line, " ");
+    Command command = <Command>components[0];
     int amount = checkpanic int:fromString(components[1]);
-    match components[0] {
-        "forward" => { 
-            return {command: "forward", amount: amount}; 
-        }
-        "up" => { 
-            return {command: "up", amount: amount}; 
-        }
-        "down" => { 
-            return {command: "down", amount: amount}; 
-        }
-        _ => { panic error("This should not be reachable!"); }
-    }
+    return {command, amount};
 }
 
 function move(Point current, Instruction instruction) returns Point {
+    var {x, y} = current;
     match instruction.command {
         "forward" => { 
-            return {x: current.x + instruction.amount, y: current.y}; 
+            x += instruction.amount;
         }
         "up" => {
-            return {x: current.x, y: current.y - instruction.amount}; // We increase y as we go DOWN for this puzzle
+            y -= instruction.amount; // We increase y as we go DOWN for this puzzle
         }
         "down" => {
-            return {x: current.x, y: current.y + instruction.amount};
+            y += instruction.amount; 
         }
-        _ => { panic error("This should not be reachable!"); }
     }
+    return {x, y};
 
 }
 
 function moveWithAim(SubState current, Instruction instruction) returns SubState {
+    var {x, y, aim} = current;
     match instruction.command {
         "forward" => { 
-            return {x: current.x + instruction.amount, y: current.y + (current.aim * instruction.amount), aim: current.aim}; 
+            x += instruction.amount;
+            y += (aim * instruction.amount);
         }
         "up" => {
-            return {x: current.x, y: current.y, aim: current.aim - instruction.amount};
+            aim -= instruction.amount;
         }
         "down" => {
-            return {x: current.x, y: current.y, aim: current.aim + instruction.amount};
+            aim += instruction.amount;
         }
-        _ => { panic error("This should not be reachable!"); }
     }
+    return {x, y, aim};
 }
 
 function partA(Instruction[] input) returns int {
-    Point finalPosition = input.reduce(move, {x: 0, y: 0});
-    return finalPosition.x * finalPosition.y;
+    var {x, y} = input.reduce(move, {x: 0, y: 0});
+    return x * y;
 }
 
 function partB(Instruction[] input) returns int {
-    SubState finalPosition = input.reduce(moveWithAim, {x: 0, y: 0, aim: 0});
-    return finalPosition.x * finalPosition.y;
+    var {x, y} = input.reduce(moveWithAim, {x: 0, y: 0, aim: 0});
+    return x * y;
 }
 
 public function main() returns error? {
