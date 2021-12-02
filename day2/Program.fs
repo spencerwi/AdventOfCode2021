@@ -1,7 +1,8 @@
 ﻿open System.Text.RegularExpressions
 
-type Point = {x: int; y: int}
-type SubStatus = {x: int; y: int; aim: int}
+type State = {x: int; y: int; aim: int}
+
+let initialState = {x=0; y=0; aim=0}
 
 module Instruction = begin
     type t = 
@@ -19,24 +20,25 @@ module Instruction = begin
         | "down" -> Down amount
         | other -> failwith ("Unrecognized command: " + other)
 
-    let move (current: Point) = function
+    let move (current: State) = function
         | Forward x -> {current with x = current.x + x}
         | Down y -> {current with y = current.y + y} // We increase our "y" as we go *down* for this puzzle
         | Up y -> {current with y = current.y - y} // We increase our "y" as we go *down* for this puzzle
 
-    let move_with_aim (current: SubStatus) = function 
+    let move_with_aim (current: State) = function 
         | Forward x -> {current with x = current.x + x; y = current.y + (current.aim * x)}
         | Down y -> {current with aim = current.aim + y}
         | Up y -> {current with aim = current.aim - y}
 end
 
-let part_a (input: Instruction.t seq) = 
-    let final = Seq.fold Instruction.move {x=0; y=0} input 
+let solve mover (input: Instruction.t seq) =
+    let final = Seq.fold mover initialState input 
     in final.x * final.y
 
-let part_b (input: Instruction.t seq) =
-    let final = Seq.fold Instruction.move_with_aim {x=0; y=0; aim=0} input 
-    in final.x * final.y
+
+let part_a = solve Instruction.move 
+
+let part_b = solve Instruction.move_with_aim 
 
 [<EntryPoint>]
 let main argv =
