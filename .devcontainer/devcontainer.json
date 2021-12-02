@@ -1,6 +1,6 @@
 // For format details, see https://aka.ms/devcontainer.json. 
 {
-	"name": "dotnet_sdk",
+	"name": "dotnet_sdk_devcontainer",
 	"runArgs": ["--init"],
 	"build": {
 		"dockerfile": "Dockerfile",
