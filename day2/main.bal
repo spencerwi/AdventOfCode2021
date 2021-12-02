@@ -8,15 +8,14 @@ type Instruction record {
     int amount;
 };
 
-type Point record {
-    int x;
-    int y;
-};
-type SubState record {
+type State record {
     int x;
     int y;
     int aim;
 };
+State initialState = {x: 0, y: 0, aim: 0};
+
+type MoverFunction function (State, Instruction) returns State;
 
 function parseInstruction(string line) returns Instruction {
     if !line.startsWith("forward") && !line.startsWith("up") && !line.startsWith("down") {
@@ -30,8 +29,8 @@ function parseInstruction(string line) returns Instruction {
     return {command, amount};
 }
 
-function move(Point current, Instruction instruction) returns Point {
-    var {x, y} = current;
+function move(State current, Instruction instruction) returns State {
+    var {x, y, aim} = current;
     match instruction.command {
         "forward" => { 
             x += instruction.amount;
@@ -43,11 +42,11 @@ function move(Point current, Instruction instruction) returns Point {
             y += instruction.amount; 
         }
     }
-    return {x, y};
+    return {x, y, aim};
 
 }
 
-function moveWithAim(SubState current, Instruction instruction) returns SubState {
+function moveWithAim(State current, Instruction instruction) returns State {
     var {x, y, aim} = current;
     match instruction.command {
         "forward" => { 
@@ -64,14 +63,17 @@ function moveWithAim(SubState current, Instruction instruction) returns SubState
     return {x, y, aim};
 }
 
-function partA(Instruction[] input) returns int {
-    var {x, y} = input.reduce(move, {x: 0, y: 0});
+function solve(MoverFunction mover, Instruction[] input) returns int {
+    var {x, y} = input.reduce(mover, initialState);
     return x * y;
 }
 
+function partA(Instruction[] input) returns int {
+    return solve(move, input);
+}
+
 function partB(Instruction[] input) returns int {
-    var {x, y} = input.reduce(moveWithAim, {x: 0, y: 0, aim: 0});
-    return x * y;
+    return solve(moveWithAim, input);
 }
 
 public function main() returns error? {
