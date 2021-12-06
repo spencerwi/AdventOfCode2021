@@ -1,5 +1,6 @@
 ﻿open System
 
+// Utility functions for dealing with 2D arrays
 let rows (arr : 'a[,]) = 
     let height = Array2D.length1 arr in
     seq {
