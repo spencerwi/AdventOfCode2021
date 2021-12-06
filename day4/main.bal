@@ -2,7 +2,10 @@ import ballerina/io;
 import ballerina/regex;
 
 public type CellState "marked"|"unmarked";
-public type Cell [int, CellState];
+public type Cell record {
+    int value;
+    CellState state;
+};
 public type BingoBoard Cell[][];
 
 // Ballerina doesn't have generic support, and its @typeParam thing doesn't work right
@@ -35,9 +38,8 @@ function markCell(int number, BingoBoard board) {
     foreach int rowNum in 0..<board.length() {
         Cell[] row = board[rowNum];
         foreach int colNum in 0..<row.length() {
-            var [value, _] = row[colNum];
-            if (value == number) {
-                board[rowNum][colNum] = [value, "marked"];
+            if (row[colNum].value == number) {
+                board[rowNum][colNum] = {value: number, state: "marked"};
             }
         }
     }
@@ -45,7 +47,7 @@ function markCell(int number, BingoBoard board) {
 
 function boardHasWon(BingoBoard board) returns boolean {
     var isWinningSequence = function(Cell[] sequence) returns boolean {
-        foreach var [_, state] in sequence {
+        foreach var {state} in sequence {
             if state == "unmarked" {
                 return false;
             }
@@ -65,8 +67,8 @@ function score(BingoBoard board, int lastNumberCalled) returns int {
     int[] unmarkedCellValues = 
         from Cell[] row in board
         from Cell cell in row
-        where cell[1] == "unmarked"
-        select cell[0];
+        where cell.state == "unmarked"
+        select cell.value;
 
     int unmarkedCellSum = unmarkedCellValues.reduce(
         function(int a, int b) returns int {
@@ -97,7 +99,7 @@ public function main() returns error? {
                     from string element in regex:split(line, "\\s+")
                     where element.trim().length() > 0
                     let int intElement = checkpanic int:fromString(element)
-                    select [intElement, "unmarked"];
+                    select {value: intElement, state: "unmarked"};
             });
         });
 
