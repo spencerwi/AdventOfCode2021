@@ -40,35 +40,22 @@ module Grid = begin
     }
 
     let drawLine (grid : t) (line : Line.t) =
-        let startX, stopX = minAndMax line.start.x line.stop.x in
-        let startY, stopY = minAndMax line.start.y line.stop.y in 
-        if Line.isHorizontal line then
-            for x in startX..stopX do
-                grid[x,startY] <- grid[x,startY] + 1
-        elif Line.isVertical line then
-            for y in startY..stopY do
-                grid[startX,y] <- grid[startX,y] + 1
-        else
-            let xIncrement =
-                if line.start.x < line.stop.x 
-                then 1
-                else -1
-            let yIncrement = 
-                if line.start.y < line.stop.y
-                then 1
-                else -1
-            let mutable y = line.start.y in
-            for x in (line.start.x)..xIncrement..(line.stop.x) do
-                grid[x,y] <- grid[x,y] + 1
-                y <- y + yIncrement 
+        let xIncrement =
+            if line.start.x < line.stop.x then 1
+            elif line.start.x > line.stop.x then -1
+            else 0
+        let yIncrement = 
+            if line.start.y < line.stop.y then 1
+            elif line.start.y > line.stop.y then -1
+            else 0
+        let mutable x = line.start.x in
+        let mutable y = line.start.y in
+        while (x <> line.stop.x + xIncrement) || (y <> line.stop.y + yIncrement) do
+            grid[x,y] <- grid[x,y] + 1
+            x <- x + xIncrement
+            y <- y + yIncrement 
 
-    let draw gridSize lines =
-        let grid = Array2D.create gridSize.width gridSize.height 0 in
-        for line in lines do
-            drawLine grid line
-        grid
-
-    let findOverlaps grid =
+    let countOverlaps grid =
         seq {
             for row in 0..((Array2D.length1 grid) - 1) do
                 for col in 0..((Array2D.length2 grid) - 1) do
@@ -77,15 +64,21 @@ module Grid = begin
         } |> Seq.length
 end
 
-let part_a gridSize lines =
-    let isNotDiagonal line = 
-        (Line.isHorizontal line) || (Line.isVertical line)
-    let grid = Grid.draw gridSize (Seq.filter isNotDiagonal lines) in
-    Grid.findOverlaps grid
+let solve (gridSize : Grid.SizeSpec) lines =
+    let grid = Array2D.create gridSize.width gridSize.height 0 in
 
-let part_b gridSize lines =
-    let grid = Grid.draw gridSize lines in
-    Grid.findOverlaps grid
+    // Part A: draw all the non-diagonal lines, and count the overlaps
+    for line in lines do
+        if Line.isHorizontal line || Line.isVertical line then
+            Grid.drawLine grid line
+    let partA = Grid.countOverlaps grid in
+
+    // Part B: now draw all the diagonal lines too, and count the overlaps again
+    for line in lines do
+        if not (Line.isHorizontal line) && not (Line.isVertical line) then
+            Grid.drawLine grid line
+    (partA, Grid.countOverlaps grid)
+    
 
 [<EntryPoint>]
 let main argv =
@@ -105,6 +98,7 @@ let main argv =
         |> Seq.max 
         |> ((+) 1) // we need one more space than the largest Y seen to accommodate 0 through largestY
 
-    printfn "Part A: %d" (part_a {width=gridWidth; height=gridHeight} inputLines)
-    printfn "Part B: %d" (part_b {width=gridWidth; height=gridHeight} inputLines)
+    let partA, partB = solve {width=gridWidth; height=gridHeight} inputLines in
+    printfn "Part A: %d" partA
+    printfn "Part B: %d" partB
     0
