@@ -29,10 +29,10 @@ function isHorizontal(Line line) returns boolean {
     return line.begin.y == line.end.y;
 }
 function getIncrement(int begin, int end) returns int {
-    if (begin > end) { 
-        return -1;
-    } else if (begin < end) {
+    if (begin < end) { 
         return 1;
+    } else if (begin > end) {
+        return -1;
     } else {
         return 0;
     }
@@ -52,27 +52,13 @@ class Grid {
     }
 
     function drawLine(Line line) {
-        int startX = int:min(line.begin.x, line.end.x);
-        int stopX = int:max(line.begin.x, line.end.x);
-        int startY = int:min(line.begin.y, line.end.y);
-        int stopY = int:max(line.begin.y, line.end.y);
-        if isHorizontal(line) {
-            foreach int x in startX...stopX {
-                self.data[startY][x] += 1;
-            }
-        } else if isVertical(line) {
-            foreach int y in startY...stopY {
-                self.data[y][startX] += 1;
-            }
-        } else {
-            int xIncrement = getIncrement(line.begin.x, line.end.x);
-            int yIncrement = getIncrement(line.begin.y, line.end.y);
-            var {x,y} = line.begin;
-            while (x != (line.end.x + xIncrement)) {
-                self.data[y][x] += 1;
-                x += xIncrement;
-                y += yIncrement;
-            }
+        int xIncrement = getIncrement(line.begin.x, line.end.x);
+        int yIncrement = getIncrement(line.begin.y, line.end.y);
+        var {x,y} = line.begin;
+        while (x != (line.end.x + xIncrement) || (y != (line.end.y + yIncrement))) {
+            self.data[y][x] += 1;
+            x += xIncrement;
+            y += yIncrement;
         }
     }
 
