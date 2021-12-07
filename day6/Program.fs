@@ -3,19 +3,13 @@
     type t = int64[]
 
     let parseInput (input: string) =
-        let counts = 
-            input
-            |> (fun line -> line.Split ",")
-            |> Seq.map int
-            |> Seq.countBy id
-            |> Map.ofSeq
-        in
         let mutable fishBuckets = Array.create 9 0L in
-        for i in 0..8 do
-            fishBuckets[i] <- 
-                match Map.tryFind i counts with
-                | Some count -> (int64 count)
-                | None -> 0L
+        let fishes = 
+            input.Split ","
+            |> Seq.map int
+        in
+        for fish in fishes do
+            fishBuckets[fish] <- fishBuckets[fish] + 1L;
         fishBuckets
 
     let step (fishes: t) =
