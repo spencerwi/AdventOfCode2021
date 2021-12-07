@@ -4,7 +4,7 @@
 	"runArgs": ["--init"],
 	"build": {
 		"dockerfile": "Dockerfile",
-		"args": { "VERSION": "slbeta4" }
+		"args": { "VERSION": "slbeta5" }
 	},
 
 	// Set *default* container specific settings.json values on container create.
