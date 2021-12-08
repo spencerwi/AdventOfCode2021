@@ -1,6 +1,11 @@
 ﻿#nowarn "25"
 open System
 
+type RawLine = {
+    shown: string[]
+    output: string[]
+}
+
 let sortString (s: string) : string =
     s |> Seq.sort |> String.Concat
 
@@ -43,15 +48,13 @@ let buildMapping (lineShownDigits : string seq) =
         // This is either a 0, a 6, or a 9.
         // When 9 is lit up, all the lights from 4 are also lit up. 
         // That's not true for 6 or 0.
-        let digitFour = getDigitFor 4 in
-        if digit |> hasAllWiresFrom <| digitFour then
+        if digit |> hasAllWiresFrom <| (getDigitFor 4) then
             markAs digit 9
         else
             // Now it's either a 0 or a 6.
             // When 0 is lit up, all the lights from 1 are also lit up. 
             // That's not true for 0.
-            let digitOne = getDigitFor 1 in
-            if digit |> hasAllWiresFrom <| digitOne then
+            if digit |> hasAllWiresFrom <| (getDigitFor 1) then
                 markAs digit 0
             else
                 markAs digit 6
@@ -62,18 +65,23 @@ let buildMapping (lineShownDigits : string seq) =
         // This is either a 2, a 3, or a 5.
         // When 3 is lit up, all the lights from 1 are also lit up. 
         // The same is not true when 2 or 5 is lit up. So we can use that to tell them apart.
-        let digitOne = getDigitFor 1 in
-        if digit |> hasAllWiresFrom <| digitOne then
+        if digit |> hasAllWiresFrom <| (getDigitFor 1) then
             markAs digit 3
         else
             // Now this is either a 2 or a 5. 
             // When 6 is lit up, then all the lights from 5 are also lit up.
-            let digitSix = getDigitFor 6 in
-            if digitSix |> hasAllWiresFrom <| digit then
+            if (getDigitFor 6) |> hasAllWiresFrom <| digit then
                 markAs digit 5 
             else
                 markAs digit 2
     mapping
+
+let translate mapping digits =
+    digits
+    |> Seq.map (fun digit -> Map.find (sortString digit) mapping)
+    |> Seq.map string
+    |> String.concat ""
+    |> int
 
 let partA input =
     seq {
@@ -83,19 +91,11 @@ let partA input =
                     yield digit
     } |> Seq.length
 
-let partB (lines: (string[] * string[]) list) =
+let partB (lines: RawLine list) =
     seq {
-        for (shownDigits, outputDigits) in lines do 
-            let digitMapping = buildMapping shownDigits in
-            yield 
-                outputDigits
-                |> Seq.map (fun outputDigit ->
-                    Map.find (sortString outputDigit) digitMapping
-                    |> string
-                )
-                |> String.concat ""
-                |> int
-
+        for line in lines do 
+            let digitMapping = buildMapping line.shown in
+            yield translate digitMapping line.output
     } 
     |> Seq.sum
 
@@ -111,10 +111,10 @@ let main argv =
             let [|shownStr; outputStr|] = line.Split '|' in
             let shown = shownStr.Split(' ', StringSplitOptions.RemoveEmptyEntries) in
             let output = outputStr.Split(' ', StringSplitOptions.RemoveEmptyEntries) in
-            yield (shown, output)
+            yield {shown = shown; output = output}
     ]
     in
-    let shownDigits, outputDigits = List.unzip lines in
+    let outputDigits = List.map (fun line -> line.output) lines in
     printfn "Part A: %d" (partA outputDigits);
     printfn "Part B: %d" (partB lines);
     0
