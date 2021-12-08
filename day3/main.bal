@@ -34,8 +34,8 @@ function flipBit(string bit) returns string {
 function mostCommonBitInColumn(int column, string[] inputs) returns string {
     string[] rowsWithOneInColumn =
             from var row in inputs
-    where row[column] == "1"
-    select row;
+            where row[column] == "1"
+            select row;
     int onesInColumn = rowsWithOneInColumn.length();
     int zeroesInColumn = inputs.length() - onesInColumn;
     if onesInColumn >= zeroesInColumn {

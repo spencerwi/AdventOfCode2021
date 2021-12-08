@@ -28,8 +28,7 @@ public function main() returns error? {
 
     int[] input = 
         from var line in lines
-        let int|error parsed = check int:fromString(line)
-        where !(parsed is error)
+        let int parsed = checkpanic int:fromString(line)
         select parsed;
 
     io:println("Part A: ", partA(input));

@@ -70,12 +70,7 @@ function score(BingoBoard board, int lastNumberCalled) returns int {
         where cell.state == "unmarked"
         select cell.value;
 
-    int unmarkedCellSum = unmarkedCellValues.reduce(
-        function(int a, int b) returns int {
-            return a + b;
-        },
-    0);
-
+    int unmarkedCellSum = int:sum(...unmarkedCellValues);
     return unmarkedCellSum * lastNumberCalled;
 }
 
@@ -94,6 +89,8 @@ public function main() returns error? {
 
     BingoBoard[] boards = chunkBy(nonEmptyBingoLines, 5)
         .map(function (string[] boardLines) returns BingoBoard {
+            // nested map here instead of a nested-from select because we want
+            // to retain the 5x5 shape rather than just getting a single Cell[].
             return boardLines.map(function (string line) returns Cell[] {
                 return 
                     from string element in regex:split(line, "\\s+")
