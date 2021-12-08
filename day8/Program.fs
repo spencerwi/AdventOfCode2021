@@ -32,51 +32,47 @@ let buildMapping (lineShownDigits : string seq) =
     let getDigitFor value = Map.findKey (fun _ v -> v = value) mapping in
     let hasAllWiresFrom (digit : string) (from : string) : bool =
         from |> String.forall (digit.Contains)
+    let digitsOfLength n = 
+        nonUniqueLengthDigits
+        |> Seq.filter (fun d -> d.Length = n)
 
     // We next need to determine which digit is 6. This is because we need to 
-    //  have identified 6 in order to identify 5 (and 2).
-    let digitSix = 
-        nonUniqueLengthDigits
-        |> Seq.filter (fun digit -> digit.Length = 6)
-        |> Seq.find (fun digit -> 
-            let digitOne = getDigitFor 1 in
-            not (digit |> hasAllWiresFrom <| digitOne)
-        )
-    markAs digitSix 6;
-
-    // Now we have enough information to identify the remaining digits (2, 3, 5, and 9).
-    for digit in nonUniqueLengthDigits do
-        match digit.Length with
-        | 5 ->
-            // This is either a 2, a 3, or a 5.
-            // When 3 is lit up, all the lights from 1 are also lit up. 
-            // The same is not true when 2 or 5 is lit up. So we can use that to tell them apart.
+    //  have identified 6 in order to identify 5 (and 2). Along the way, we'll
+    //  wind up identifying 0 and 9.
+    for digit in digitsOfLength 6 do
+        // This is either a 0, a 6, or a 9.
+        // When 9 is lit up, all the lights from 4 are also lit up. 
+        // That's not true for 6 or 0.
+        let digitFour = getDigitFor 4 in
+        if digit |> hasAllWiresFrom <| digitFour then
+            markAs digit 9
+        else
+            // Now it's either a 0 or a 6.
+            // When 0 is lit up, all the lights from 1 are also lit up. 
+            // That's not true for 0.
             let digitOne = getDigitFor 1 in
             if digit |> hasAllWiresFrom <| digitOne then
-                markAs digit 3
+                markAs digit 0
             else
-                // Now this is either a 2 or a 5. 
-                // When 6 is lit up, then all the lights from 5 are also lit up.
-                if digitSix |> hasAllWiresFrom <| digit then
-                    markAs digit 5 
-                else
-                    markAs digit 2
-        | 6 -> 
-            // This is either a 0, a 6, or a 9.
-            // When 9 is lit up, all the lights from 4 are also lit up. 
-            // That's not true for 6 or 0.
-            let digitFour = getDigitFor 4 in
-            if digit |> hasAllWiresFrom <| digitFour then
-                markAs digit 9
+                markAs digit 6
+
+
+    // Now we have enough information to identify the remaining digits (2, 3, and 5).
+    for digit in digitsOfLength 5 do
+        // This is either a 2, a 3, or a 5.
+        // When 3 is lit up, all the lights from 1 are also lit up. 
+        // The same is not true when 2 or 5 is lit up. So we can use that to tell them apart.
+        let digitOne = getDigitFor 1 in
+        if digit |> hasAllWiresFrom <| digitOne then
+            markAs digit 3
+        else
+            // Now this is either a 2 or a 5. 
+            // When 6 is lit up, then all the lights from 5 are also lit up.
+            let digitSix = getDigitFor 6 in
+            if digitSix |> hasAllWiresFrom <| digit then
+                markAs digit 5 
             else
-                // Now it's either a 0 or a 6.
-                // When 0 is lit up, all the lights from 1 are also lit up. 
-                // That's not true for 0.
-                let digitOne = getDigitFor 1 in
-                if digit |> hasAllWiresFrom <| digitOne then
-                    markAs digit 0
-                else
-                    markAs digit 6
+                markAs digit 2
     mapping
 
 let partA input =
