@@ -1,5 +1,4 @@
 import ballerina/io;
-import ballerina/lang.array as array;
 
 type Point record {
     int row;
@@ -91,7 +90,8 @@ function solve(Grid grid) returns [int, int] {
     }
 
     int[] largestBasinSizes = 
-        from Basin b in basins.sort(array:DESCENDING, b => b.length())
+        from Basin b in basins
+        order by b.length() descending
         limit 3
         select b.length();
 
