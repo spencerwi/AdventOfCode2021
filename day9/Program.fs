@@ -1,5 +1,4 @@
-﻿open System
-open System.Collections.Generic
+﻿open System.Collections.Generic
 
 type Point = int * int // row * column
 
