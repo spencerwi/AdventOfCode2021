@@ -4,6 +4,11 @@ import ballerina/io;
 // statements, and doesn't appear to have a literal form. So we just use string
 //  as char everywhere.
 
+type ParseResult record {
+    string? err;
+    string[] unmatched;
+};
+
 function scoreError(string c) returns int {
     match c {
         ")" => { return 3; }
@@ -32,7 +37,7 @@ function scoreIncomplete(string[] remaining) returns int {
     return total;
 }
 
-function findError(string line) returns [string?, string[]] {
+function findError(string line) returns ParseResult {
     string[] expectedClosers = [];
     foreach int i in 0..<line.length() { 
         // Trying to do a for-each over the string itself yields a 
@@ -47,26 +52,26 @@ function findError(string line) returns [string?, string[]] {
             _ => { 
                 string nextExpected = expectedClosers.pop();
                 if c != nextExpected {
-                    return [c, expectedClosers];
+                    return {err: c, unmatched: expectedClosers};
                 }
             }
         }
     }
-    return [null, expectedClosers];
+    return {err: null, unmatched: expectedClosers};
 }
 
 function solve(string[] input) returns [int, int] {
-    var results = input.map(findError);
+    ParseResult[] results = input.map(findError);
     int partA = int:sum(...
-        from var [errChar, _] in results
-        where errChar != null
-        select scoreError(errChar)
+        from var {err} in results
+        where err != null
+        select scoreError(err)
     );
 
     int[] incompleteScores = ( 
-        from var [errChar, remainingStack] in results
-        where errChar == null
-        let int score = scoreIncomplete(remainingStack)
+        from var {err, unmatched} in results
+        where err == null
+        let int score = scoreIncomplete(unmatched)
         order by score ascending
         select score
     );
