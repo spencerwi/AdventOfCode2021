@@ -1,5 +1,10 @@
 ﻿open System.Collections.Generic
 
+type ParseResult = {
+    err: char option
+    unmatched: char Stack
+}
+
 let scoreError = function
     | ')' -> 3
     | ']' -> 57
@@ -35,26 +40,23 @@ let findError line =
                 nextExpectedCloser <> other
         )
     in
-    (unexpectedChar, expectedClosers)
+    { err = unexpectedChar; unmatched = expectedClosers }
 
 
 let solve input =
     let results = Array.map findError input in
     let partA = 
         query {
-            for (err, _) in results do
-            where (Option.isSome err)
-            let score = 
-                match err with
-                | Some c -> scoreError c
-                | None -> 0
-            select score
-        } |> Seq.sum
+            for result in results do
+            where (Option.isSome result.err)
+            sumBy (scoreError result.err.Value)
+        } 
+    in
     let incompleteLineScores = 
         query {
-            for (error, remaining) in results do
-            where (Option.isNone error)
-            let score = scoreIncomplete remaining
+            for result in results do
+            where (Option.isNone result.err)
+            let score = scoreIncomplete result.unmatched
             sortBy score
             select score
         } |> Array.ofSeq
