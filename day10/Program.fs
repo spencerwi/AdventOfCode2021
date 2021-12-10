@@ -39,24 +39,25 @@ let findError line =
 
 
 let solve input =
-    let results = 
-        input
-        |> Array.map findError
-    in
+    let results = Array.map findError input in
     let partA = 
-        results
-        |> Seq.map fst
-        |> Seq.filter Option.isSome
-        |> Seq.sumBy (function 
-            | Some c -> scoreError c
-            | None -> 0 // shouldn't be reachable, but makes the compiler happy
-        )
+        query {
+            for (err, _) in results do
+            where (Option.isSome err)
+            let score = 
+                match err with
+                | Some c -> scoreError c
+                | None -> 0
+            select score
+        } |> Seq.sum
     let incompleteLineScores = 
-        Array.sort <| [| 
+        query {
             for (error, remaining) in results do
-                if Option.isNone error then
-                    yield scoreIncomplete remaining
-        |]
+            where (Option.isNone error)
+            let score = scoreIncomplete remaining
+            sortBy score
+            select score
+        } |> Array.ofSeq
     in
     let partB = incompleteLineScores[incompleteLineScores.Length / 2] in
     (partA, partB)
