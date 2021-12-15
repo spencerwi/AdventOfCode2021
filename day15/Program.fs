@@ -60,9 +60,39 @@ module Maze = begin
         ;
         distancesFromSource[goal.row, goal.col].cost
 
+    /// <summary>
+    /// Expands the maze based on these rules:
+    /// The entire cave is actually five times larger in both dimensions 
+    /// than you thought;  the area you originally scanned is just one tile 
+    /// in a 5x5 tile area that forms the full map. Your original map tile 
+    /// repeats to the right and downward; each time the tile repeats to the
+    /// right or downward, all of its risk levels are 1 higher than the tile
+    /// immediately up or left of it. However, risk levels above 9 wrap back
+    /// around to 1. So, if your original map had some position with a risk
+    /// level of 8, then that same position on each of the 25 total tiles 
+    /// would be as follows:
+    ///  8 9 1 2 3
+    ///  9 1 2 3 4
+    ///  1 2 3 4 5
+    ///  2 3 4 5 6
+    ///  3 4 5 6 7
+    /// </summary>
+    let expand (maze : t) : t =
+        let originalHeight, originalWidth = size maze in
+        Array2D.init (originalHeight * 5) (originalWidth * 5) (fun row col ->
+            let originalMazeValue = maze[row % originalHeight, col % originalWidth] in
+            let tileDistanceAway = (row / originalHeight) + (col / originalWidth) in
+            let newValue = originalMazeValue + tileDistanceAway in
+            if newValue > 9 then
+                (newValue % 9) 
+            else newValue
+        )
+
 end
 
 let partA = Maze.findSafestPath
+
+let partB = Maze.expand >> Maze.findSafestPath
 
 [<EntryPoint>]
 let main argv =
@@ -75,4 +105,5 @@ let main argv =
         |> Maze.parse
     in
     printfn "Part A: %d" (partA input)
+    printfn "Part B: %d" (partB input)
     0
