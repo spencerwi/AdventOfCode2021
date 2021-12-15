@@ -8,11 +8,6 @@ module Maze = begin
         col: int
     }
 
-    type DistanceFromSource = {
-        parent: Point option
-        cost: int
-    }
-
     let parse (inputLines: string[]) : t =
         array2D [|
             for line in inputLines do
@@ -40,25 +35,36 @@ module Maze = begin
             select candidate
         }
 
-    let findSafestPath maze =
+    let findSafestPathRisk maze =
         let height, width = size maze in
         let goal = {row = height - 1; col = width - 1} in
 
         // Let's dijkstra this business, yo
-        let distancesFromSource = Array2D.create height width {parent = None; cost = Int32.MaxValue} in
-        distancesFromSource[0,0] <- {parent = None; cost = 0}
+        
+        // We'll keep track of how far each point in the grid is from the source by using a separate grid of the same size
+        let distancesFromSource = Array2D.create height width Int32.MaxValue in
+        distancesFromSource[0,0] <- 0 // the source *is* the source, my dude
+
+        // Now, we want to walk from the source "outwards" and trace each shortest path. 
+        // Sometimes, we'll see a cell again but on a shorter path. No worries, dawg, just 
+        // update its distance-from-the-source and go check it out again to see if anything's 
+        // changed about it.
         let unsettled = new Queue<Point>([|{row = 0; col = 0}|]) in
         while unsettled.Count > 0 do
             let current = unsettled.Dequeue() in
             for neighbor in (neighborsOf current maze) do
                 let weight = maze[neighbor.row, neighbor.col] in
-                let existingDistance = distancesFromSource[neighbor.row, neighbor.col].cost in
-                let distanceThroughCurrent = distancesFromSource[current.row, current.col].cost + weight in
+                let existingDistance = distancesFromSource[neighbor.row, neighbor.col] in
+                let distanceThroughCurrent = distancesFromSource[current.row, current.col] + weight in
                 if distanceThroughCurrent < existingDistance then
-                    distancesFromSource[neighbor.row, neighbor.col] <- {parent = Some current; cost = distanceThroughCurrent}
+                    distancesFromSource[neighbor.row, neighbor.col] <- distanceThroughCurrent
                     unsettled.Enqueue neighbor
         ;
-        distancesFromSource[goal.row, goal.col].cost
+
+        // Finally, we can answer the question: 
+        // how risky (far) is the safest (shortest) path from the top-left to 
+        // the bottom-right?
+        distancesFromSource[goal.row, goal.col]
 
     /// <summary>
     /// Expands the maze based on these rules:
@@ -90,9 +96,9 @@ module Maze = begin
 
 end
 
-let partA = Maze.findSafestPath
+let partA = Maze.findSafestPathRisk
 
-let partB = Maze.expand >> Maze.findSafestPath
+let partB = Maze.expand >> Maze.findSafestPathRisk
 
 [<EntryPoint>]
 let main argv =
