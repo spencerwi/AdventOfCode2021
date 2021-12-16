@@ -3,6 +3,15 @@
 
 module Packets = begin
     type Length = Packets of int | Characters of int
+    type Operation = 
+        | Sum
+        | Product
+        | Minimum
+        | Maximum
+        | GreaterThan
+        | LessThan
+        | EqualTo
+
     type LiteralValuePacket = {
         version: int
         value: int64
@@ -10,6 +19,7 @@ module Packets = begin
         version: int
         length: Length
         subpackets: Packet list
+        operation: Operation
     } and Packet = Literal of LiteralValuePacket | Operator of OperatorPacket
 
     let isJunkData bits =
@@ -49,13 +59,23 @@ module Packets = begin
                 printfn " Literal %d" value
                 let totalPacketLength = 6 + literalValueSectionLength
                 Some (bits[totalPacketLength..], Literal {version = version; value = value})
-            | _ -> 
+            | opcode -> 
+                let operation = 
+                    match opcode with
+                    | 0 -> Sum
+                    | 1 -> Product
+                    | 2 -> Minimum
+                    | 3 -> Maximum
+                    | 5 -> GreaterThan
+                    | 6 -> LessThan
+                    | 7 -> EqualTo
+                in
                 let length = 
                     match bits[6] with
                     | '0' -> Characters (Convert.ToInt32(bits.Substring(7, 15), 2))
                     | '1' -> Packets (Convert.ToInt32(bits.Substring(7, 11), 2))
                 in
-                printfn " Operator length=%A" length 
+                printfn " Operator %A length=%A" operation length 
                 let leftoverBits, subpackets =
                     match length with
                     | Characters count ->
@@ -90,8 +110,7 @@ module Packets = begin
                         //printfn "Remaining bits in the packet: %s" remainingBitsInPacket
                         (allRemainingBits, subpacketList)
                 in
-                Some (leftoverBits, Operator {version = version; length = length; subpackets = subpackets})
-
+                Some (leftoverBits, Operator {version = version; operation = operation; length = length; subpackets = subpackets})
 
     let hexadecimalToBits input =
         input 
@@ -120,6 +139,26 @@ module Packets = begin
         | Operator o -> 
             o.version + (Seq.sumBy versionSum o.subpackets)
 
+    let rec eval = function 
+        | Literal l -> l.value
+        | Operator o ->
+            let subpacketValues = Seq.map eval o.subpackets |> List.ofSeq in
+            match o.operation with 
+            | Sum -> Seq.sum subpacketValues
+            | Product -> 
+                subpacketValues
+                |> Seq.fold ((*)) 1
+            | Minimum -> Seq.min subpacketValues
+            | Maximum -> Seq.max subpacketValues
+            | GreaterThan -> 
+                let [a;b] = subpacketValues in
+                if a > b then 1 else 0
+            | LessThan -> 
+                let [a;b] = subpacketValues in
+                if a < b then 1 else 0
+            | EqualTo ->
+                let [a;b] = subpacketValues in
+                if a = b then 1 else 0
 end
 
 [<EntryPoint>]
@@ -136,5 +175,5 @@ let main argv =
         |> Packets.parsePacket 0 
         |> Option.get
     printfn "Part A: %d" (Packets.versionSum rootPacket)
-    // printfn "Part A: %d" (partA input)
+    printfn "Part B: %d" (Packets.eval rootPacket)
     0
