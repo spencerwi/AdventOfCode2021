@@ -27,48 +27,48 @@ module TargetArea = begin
             {left = (int leftStr); right = (int rightStr); bottom = (int bottomStr); top = (int topStr)}
         | other -> failwith $"Invalid line: {other}"
 
-    let isInTargetArea point area =
+    let contains area point =
         point.x >= area.left && point.x <= area.right &&
         point.y >= area.bottom && point.y <= area.top
+
+    let hasPassed point targetArea =
+        let hasPassedHorizontally =
+            if targetArea.right <= 0 then
+                point.x < targetArea.left
+            else
+                point.x > targetArea.right
+        in
+        let hasPassedVertically =
+            if targetArea.top <= 0 then
+                point.y < targetArea.bottom
+            else
+                point.y > targetArea.top
+        in
+        hasPassedHorizontally && hasPassedVertically
+
+    let willNeverLandIn (point, velocity) targetArea =
+        // if our X velocity has fizzled out before we've gotten to the target, we won't land.
+        let hasXVelocityProblem =
+            (point.x < targetArea.left || point.x > targetArea.right)
+            && velocity.dx = 0
+        in
+        // if our Y velocity is always going to keep us below the target, we won't land.
+        let hasYVelocityProblem =
+            (point.y < targetArea.bottom) && velocity.dy <= 0
+        in
+        hasXVelocityProblem || hasYVelocityProblem
+
+
     
     let traceLine velocity targetArea =
         let mutable currentPoint = {x=0; y=0} in
         let mutable v = velocity;
-        let hasPassedTarget point =
-            let hasPassedHorizontally =
-                if targetArea.right <= 0 then
-                    point.x < targetArea.left
-                else
-                    point.x > targetArea.right
-            in
-            let hasPassedVertically =
-                if targetArea.top <= 0 then
-                    point.y < targetArea.bottom
-                else
-                    point.y > targetArea.top
-            in
-            hasPassedHorizontally && hasPassedVertically
-        let willNeverLand velocity point =
-            // if our X velocity has fizzled out before we've gotten to the target, we won't land.
-            let hasXVelocityProblem =
-                (point.x < targetArea.left || point.x > targetArea.right)
-                && velocity.dx = 0
-            in
-            // if our Y velocity is always going to keep us below the target, we won't land.
-            let hasYVelocityProblem =
-                (point.y < targetArea.bottom) && velocity.dy <= 0
-            in
-            hasXVelocityProblem || hasYVelocityProblem
-        in
         let shouldStop point velocity =
-            // check to see if we've hit the target area
-            (point |> isInTargetArea <| targetArea)
+            (targetArea |> contains <| point)
             ||
-            // check to see if we've passed the target area completely
-            (hasPassedTarget point)
+            (point |> hasPassed <| targetArea)
             || 
-            // check to see if our velocity is such that it'll never land
-            (willNeverLand velocity point)
+            ((point, velocity) |> willNeverLandIn <| targetArea)
         in
         seq {
             while not (shouldStop currentPoint v) do
@@ -86,7 +86,7 @@ module TargetArea = begin
 
     let hitsTarget velocity targetArea =
         traceLine velocity targetArea
-        |> Seq.exists (fun p -> p |> isInTargetArea <| targetArea)
+        |> Seq.exists (targetArea |> contains)
 end
 
 let solve input = 
@@ -104,12 +104,12 @@ let solve input =
             (1, target.top)
     in
     let onTargetVelocities =
-        seq {
+        query {
             for dx in 0..xStep..farXEdge do
-                for dy in (farYEdge * -1)..yStep..farYEdge do
-                    let candidateVelocity : TargetArea.Velocity = {dx=dx; dy=dy}
-                    if TargetArea.hitsTarget candidateVelocity target then
-                        yield candidateVelocity
+            for dy in (farYEdge * -1)..yStep..farYEdge do
+            let candidateVelocity : TargetArea.Velocity = {dx=dx; dy=dy}
+            where (TargetArea.hitsTarget candidateVelocity target)
+            select candidateVelocity
         }
     in
     let partA = 
