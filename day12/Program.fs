@@ -64,9 +64,9 @@ module Cave = begin
         in
         {canVisit = canVisit; updateCaves = updateCaves }
 
-    let findPaths (strategy : TraversalStrategy) (cave : t) =
+    let countPaths (strategy : TraversalStrategy) (cave : t) =
         // Let's do some DFS backtracking, yay!
-        let rec countPaths (pathSoFar: string) (alreadySeenSmallCaves : Set<string>) goal start =
+        let rec search (alreadySeenSmallCaves : Set<string>) goal start =
             if start = goal then 1
             else
                 match Map.tryFind start cave with
@@ -76,11 +76,10 @@ module Cave = begin
                         for neighbor in neighbors do
                         where (strategy.canVisit alreadySeenSmallCaves neighbor)
                         let newAlreadySeenCaves = strategy.updateCaves alreadySeenSmallCaves neighbor in
-                        let updatedPath = pathSoFar + "->" + neighbor in
-                        sumBy (countPaths updatedPath newAlreadySeenCaves goal neighbor)
+                        sumBy (search newAlreadySeenCaves goal neighbor)
                     }
         in
-        countPaths "start" (Set.ofList ["start"]) "end" "start"
+        search (Set.ofList ["start"]) "end" "start"
 end
 
 
@@ -94,6 +93,6 @@ let main argv =
         System.IO.File.ReadAllLines filename
         |> Cave.parse
     in
-    printfn "Part A: %d" (Cave.findPaths Cave.partAStrategy cave)
-    printfn "Part B: %d" (Cave.findPaths Cave.partBStrategy cave)
+    printfn "Part A: %d" (Cave.countPaths Cave.partAStrategy cave)
+    printfn "Part B: %d" (Cave.countPaths Cave.partBStrategy cave)
     0
