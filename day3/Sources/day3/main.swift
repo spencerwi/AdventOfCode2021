@@ -24,7 +24,7 @@ func mostCommonBitInColumn<T>(column: Int, _ inputs: [T]) -> Character where T :
     let totalNumberOfInputs = inputs.count
     let onesInThisColumn = inputs.filter({$0[column] == "1"}).count
     let zeroesInThisColumn = totalNumberOfInputs - onesInThisColumn
-    if onesInThisColumn > zeroesInThisColumn {
+    if onesInThisColumn >= zeroesInThisColumn {
         return "1"
     } else {
         return "0"
@@ -51,31 +51,28 @@ func powerConsumption<T>(_ inputs: [T]) -> Int where T : StringProtocol {
     return gamma * epsilon
 }
 
-func filterByBitCriteria<T>(commonality: MostOrLeast, _ inputs: [T]) -> Int where T : StringProtocol {
-    var currentColumn = 0
-    var matches = inputs;
-    while matches.count >= 1 && currentColumn < inputs[0].count {
-        let mostCommonBit = mostCommonBitInColumn(column: currentColumn, inputs)
-        let bitToMatch : Character
-        switch commonality {
-            case .most: bitToMatch = mostCommonBit
-            case .least: bitToMatch = flipBit(mostCommonBit)
-        }
-
-        matches = matches.filter { $0[currentColumn] == bitToMatch }
-        currentColumn += 1
+func filterByBitCriteria<T>(commonality: MostOrLeast, startColumn: Int, _ rows: [T]) -> Int where T : StringProtocol {
+    if rows.count == 1 {
+        return Int(rows[0], radix: 2)!;
     }
-    return Int(matches[0], radix: 2)!
+
+    let mostCommonBit = mostCommonBitInColumn(column: startColumn, rows)
+    let bitToMatch : Character
+    switch commonality {
+        case .most: bitToMatch = mostCommonBit
+        case .least: bitToMatch = flipBit(mostCommonBit)
+    }
+    let matches = rows.filter { $0[startColumn] == bitToMatch }
+    return filterByBitCriteria(commonality: commonality, startColumn: startColumn + 1, matches)
 }
 
 func lifeSupportRating<T>(_ inputs: [T]) -> Int where T : StringProtocol {
-    let oxygenGeneratorRating = filterByBitCriteria(commonality: MostOrLeast.most, inputs)
-    let co2ScrubberRating = filterByBitCriteria(commonality: MostOrLeast.least, inputs)
+    let oxygenGeneratorRating = filterByBitCriteria(commonality: MostOrLeast.most, startColumn: 0, inputs)
+    let co2ScrubberRating = filterByBitCriteria(commonality: MostOrLeast.least, startColumn: 0, inputs)
     return oxygenGeneratorRating * co2ScrubberRating
 }
 
 let lines = try! String(contentsOfFile: "input.txt").split(separator: "\n")
-print(lines.count)
 let partA = powerConsumption(lines)
 print("Part A: \(partA)")
 let partB = lifeSupportRating(lines)
